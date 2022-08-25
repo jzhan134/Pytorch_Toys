@@ -2,3 +2,4 @@
 /.vscode
 /CIFAR10
 /MNIST
+*.pt
