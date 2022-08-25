@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
+import ssl
 from tqdm import tqdm
-dev = 'cuda' if torch.cuda.is_available() else 'cpu'
+ssl._create_default_https_context = ssl._create_unverified_context
 
 data = torchvision.datasets.CIFAR10(
     root='./CIFAR10', train=True, download=True,
@@ -15,7 +16,7 @@ data = torchvision.datasets.CIFAR10(
 )
 train_data, val_data = random_split(data, (45000, len(data) - 45000))
 train_dl = DataLoader(train_data, batch_size=128, shuffle=True)
-val_dl = DataLoader(val_data,batch_size=len(val_data))
+val_dl = DataLoader(val_data,batch_size=100)
 
 #%%
 import torch.nn as nn
@@ -60,31 +61,39 @@ if os.path.exists('CIFAR10_checkpoint.pt'):
     best_model = checkpoint['best_model']
     best_acc = checkpoint['best_acc']
     epoch0 = checkpoint['epoch']
+    print('Existing model loaded.')
 else:
     best_acc = float('-inf')
     epoch0 = 0
     best_model = None
+    print('New model created.')
 #%%
+# dev = 'cuda' if torch.cuda.is_available() else 'cpu'
+dev = 'cpu'
+model.to(dev)
+loss_fn.to(dev)
+print(f'learning using {dev}')
 for epoch in range(epoch0, 20 + epoch0):
     t0 = time.time()
     model.train()
     for img, label in tqdm(train_dl):
-        # img, label = img.to(dev), label.to(dev)
+        img, label = img.to(dev), label.to(dev)
         optimizer_fn.zero_grad()
         pred = model(img)
         loss = loss_fn(pred, label)
         loss.backward()
         optimizer_fn.step()
     model.eval()
-    for img, label in val_dl:
-        # img, label = img.to(dev), label.to(dev)
+    tot_acc = 0
+    for img, label in tqdm(val_dl):
+        img, label = img.to(dev), label.to(dev)
         pred = model(img)
         loss = loss_fn(pred, label)
         pred = torch.argmax(pred, dim=1)
-        acc = torch.sum(torch.eq(pred, label)) / len(label)
-    print(f"Epoch {epoch}: loss = {loss}, accuracy = {acc.item()}, time = {time.time() - t0:.2f}")
-    if acc > best_acc:
-        best_acc = acc
+        tot_acc += torch.sum(torch.eq(pred, label)) / len(label)
+    print(f"Epoch {epoch}: loss = {loss:.4f}, accuracy = {tot_acc/50:.4f}, time = {time.time() - t0:.2f}")
+    if tot_acc/50 > best_acc:
+        best_acc = tot_acc/50
         best_model = copy.deepcopy(model)
 #%%
 checkpoint = {
@@ -95,7 +104,6 @@ checkpoint = {
     'best_acc': best_acc
 }
 torch.save(checkpoint,'CIFAR10_checkpoint.pt')
-
 
 #%%
 imgs = torch.tensor(data.data[:625]).permute((0,3,1,2))
