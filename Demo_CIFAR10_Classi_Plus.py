@@ -33,13 +33,13 @@ class Demo_Model(nn.Module):
         self.out_ = out_
 
         self.conv1 = conv_block(self.in_, 64)
+        self.conv2 = conv_block(64, 128)
         self.max_pool1 = nn.MaxPool2d(2)
-        self.conv2 = conv_block(self.in_, 64)
 
     def forward(self, x):
         out = self.conv1(x) # 64*32*32
-        out = conv_block(64, 128)(out) # 128*32*32
-        res1 = nn.MaxPool2d(2)(out) # 128*16*16
+        out = self.conv2(out) # 128*32*32
+        res1 = self.max_pool1(out) # 128*16*16
         out = conv_block(128, 128)(res1)
         out = conv_block(128, 128)(out)
         out = out + res1 #! res1 is the residual
