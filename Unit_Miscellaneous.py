@@ -29,3 +29,13 @@ modelA = torch.nn.Linear(10,1)
 sd = modelA.state_dict()
 modelB = torch.nn.Linear(10,1)
 modelB.load_state_dict(sd)
+
+
+#%% # ! Transpose & Padding
+x = torch.tensor([[1.,1.,1.,1.,1.,1.,1.,1.]])
+conv = torch.nn.Conv1d(1,1,4,stride=2,padding=1) # * Padding add each side
+y = conv(x) # y.shape = 1*4
+trans = torch.nn.ConvTranspose1d(1,1,4, stride=2, padding=1)
+# ! conv and ConvTranspose exactly match (mirror) each other.
+# ! stride and padding parameters are exactly the same.
+trans_x = trans(y) # * trans_x.shape=8

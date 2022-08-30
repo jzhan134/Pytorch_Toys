@@ -3,3 +3,5 @@
 /CIFAR10
 /MNIST
 *.pt
+/animefacedataset
+/Results

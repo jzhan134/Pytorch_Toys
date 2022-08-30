@@ -1,5 +1,4 @@
 #%%
-from turtle import forward
 import torch
 import time
 import torchvision
